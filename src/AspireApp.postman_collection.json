@@ -1,0 +1,282 @@
+{
+	"variables": [],
+	"info": {
+		"name": "AspireApp",
+		"_postman_id": "7964844b-445c-c3f7-a986-094295f655cf",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"request": {
+				"url": "localhost:8088/api/register",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "Tushar Agarwal",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "tshragarwal@gmail.com",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "password",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "password_confirmation",
+							"value": "password",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"description": "This is post request, using this request a new user added into the records.\n\nRequired params: \nname,\nemail,\npassword,\nconfirm_password"
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"url": "localhost:8088/api/login",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "tshragarwal@gmail.com",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "password",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"description": "Generate login token after veriging user credentials.\n\nRequired fields:\n\nemail\npassword"
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"request": {
+				"url": "localhost:8088/api/logout",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 4|QpCiLTgqSUIgSgEGuc0JeoNKjMW8D3713N0jbxhS",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "User to logout"
+			},
+			"response": []
+		},
+		{
+			"name": "Loan list",
+			"request": {
+				"url": "localhost:8088/api/loan",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 5|ZpIo4JoonWGgXdSxwSUbiiZGxSgw6DorQWXbgbP8",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Get user loan list,\nif you are an admin then list all loans."
+			},
+			"response": []
+		},
+		{
+			"name": "Loan Details",
+			"request": {
+				"url": "localhost:8088/api/loan/1",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 5|ZpIo4JoonWGgXdSxwSUbiiZGxSgw6DorQWXbgbP8",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Get loan details against given loan id."
+			},
+			"response": []
+		},
+		{
+			"name": "Apply Loan",
+			"request": {
+				"url": "localhost:8088/api/loan",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 5|ZpIo4JoonWGgXdSxwSUbiiZGxSgw6DorQWXbgbP8",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "amount",
+							"value": "100.00",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "loan_term",
+							"value": "10",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"description": "Generate a loan request into system.\n\nRequired field\namount\nloan_term"
+			},
+			"response": []
+		},
+		{
+			"name": "Approve loan",
+			"request": {
+				"url": {
+					"raw": "localhost:8088/api/approve-loan?_method=patch",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"api",
+						"approve-loan"
+					],
+					"query": [
+						{
+							"key": "_method",
+							"value": "patch",
+							"equals": true,
+							"description": ""
+						}
+					],
+					"variable": []
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 2|CNI8FXnxPievh7n78whZpRjF6RLCoTE3NCnexY0l",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "loan_id",
+							"value": "2",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"description": "Only Admin restrict endpoint.\nUse to approve the loan.\n\nRequired field\n\nloan_id"
+			},
+			"response": []
+		},
+		{
+			"name": "Loan repayment",
+			"request": {
+				"url": "localhost:8088/api/loan-repayment",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer 5|ZpIo4JoonWGgXdSxwSUbiiZGxSgw6DorQWXbgbP8",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "loan_id",
+							"value": "1",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "6",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"description": "Use to re-pay loan amount.\n\nRequired field\n\nloan_id\namount"
+			},
+			"response": []
+		}
+	]
+}
