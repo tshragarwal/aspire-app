@@ -1,11 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LoansController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\RepaymentScheduleController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,24 +12,33 @@ use App\Http\Controllers\RepaymentScheduleController;
 |--------------------------------------------------------------------------
 |
 | Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
 |
 */
 
-Route::middleware('auth:sanctum')->group(function() {
-    //for user logout
-    Route::get('/logout', LogoutController::class)->name('user.logout');
-
-    // loan api
-    Route::get('/loan', [LoansController::class, 'index'])->name('loan.list');
-    Route::get('/loan/{id}', [LoansController::class, 'show'])->name('loan.show');
-    Route::post('/loan', [LoansController::class, 'store'])->name('loan.apply');
-    Route::post('/loan-repayment', RepaymentScheduleController::class)->name('loan.repayment');
-
-    // approve loan
-    Route::patch('/approve-loan', [LoansController::class, 'approve'])->name('loan.approve')->middleware('isAdmin');
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
 });
 
-Route::post('/register', RegisterController::class)->name('user.register');
-Route::post('/login', LoginController::class)->name('user.login');
+
+Route::prefix('v1')->group(function(){
+    // Public routes
+    Route::post('/login', [AuthController::class, 'login'])->name('customer.login');
+    Route::post('/register', [AuthController::class, 'register'])->name('customer.register');
+
+    // protected routes
+    Route::group(['middleware' => ['auth:sanctum']], function(){
+        Route::post('/logout', [AuthController::class, 'logout'])->name('customer.logout');
+
+        #loan
+        Route::get('/loan', [LoansController::class, 'index'])->name('loan.list');
+        Route::get('/loan/{id}', [LoansController::class, 'show'])->name('loan.show');
+        Route::post('/loan', [LoansController::class, 'store'])->name('loan.apply');
+        Route::post('/loan/repayment', RepaymentScheduleController::class)->name('loan.repayment');
+
+        # ForAdmin
+        Route::post('/loan/approve', [LoansController::class, 'approve'])->name('loan.approve')->middleware('isAdmin');
+
+    });
+});

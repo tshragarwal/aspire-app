@@ -25,8 +25,8 @@ class RepaymentRequest extends FormRequest
     public function rules()
     {
         return [
-            'amount' => ['required', 'numeric', 'min:1'],
-            'loan_id' => ['required', 'numeric']
+            'amount' => ['required', 'decimal:2', 'min:1'],
+            'loan_id' => ['required', 'numeric', 'min:1']
         ];
     }
 }

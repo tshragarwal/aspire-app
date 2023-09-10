@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Traits\HttpResponses;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,12 +10,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
+    use HttpResponses;
     /**
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * @return mixed
      */
     public function handle(Request $request, Closure $next)
     {
@@ -22,7 +24,7 @@ class AdminMiddleware
         {
             return $next($request);
         } else {
-            return response([ 'status' => 'FAIL', 'message' => 'Unauthorized request'], Response::HTTP_UNAUTHORIZED);
+            return $this->error([], UNAUTHORISED_LOAN_APPROVE, Response::HTTP_UNAUTHORIZED);
         }
     }
 }

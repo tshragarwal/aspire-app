@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Loan extends Model
 {
@@ -18,8 +20,16 @@ class Loan extends Model
         'approved_at'
     ];
 
-    public function repaymentSchedules()
+    public function repaymentSchedules(): HasMany
     {
-        return $this->hasMany('App\Models\RepaymentSchedule');
+        return $this->hasMany(RepaymentSchedule::class);
+    }
+
+    public function user(): BelongsTo {
+        return $this->belongsTo(User::class);
+    }
+
+    public function approver(): BelongsTo {
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 }

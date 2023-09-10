@@ -51,7 +51,7 @@ class LoansTest extends TestCase
                     ->json();
 
         $this->assertEquals(2, count($response['data']));
-        $this->assertEquals('SUCCESS', $response['status']);
+        $this->assertEquals('success', $response['status']);
     }
 
     public function test_fetch_loan_list_with_non_admin_user()
@@ -65,7 +65,7 @@ class LoansTest extends TestCase
                     ->json();
                     
         $this->assertEquals(1, count($response['data']));
-        $this->assertEquals('SUCCESS', $response['status']);
+        $this->assertEquals('success', $response['status']);
     }
 
     public function test_fetch_user_two_loan_details()
@@ -78,8 +78,8 @@ class LoansTest extends TestCase
                     ->assertOk()
                     ->json();
                     
-        $this->assertEquals('SUCCESS', $response['status']);
-        $this->assertEquals($this->_userTwo->id, $response['data']['user_id']);
+        $this->assertEquals('success', $response['status']);
+        $this->assertEquals($this->_userTwo->id, $response['data']['customer_details']['customer_id']);
     }
 
     public function test_user_one_try_to_fetch_another_user_loan_details()
@@ -88,10 +88,10 @@ class LoansTest extends TestCase
         $this->authUser($this->_userOne);
 
         $response = $this->getJson(route('loan.show', $loan->id))
-                    ->assertOk()
+                    ->assertNotFound()
                     ->json();
         
-        $this->assertEquals('FAIL', $response['status']);
+        $this->assertEquals('failed', $response['status']);
         $this->assertEquals(0, count($response['data']));
     }
 
@@ -119,7 +119,7 @@ class LoansTest extends TestCase
         ])->assertCreated()
         ->json();
 
-        $this->assertEquals('SUCCESS', $response['status']);
+        $this->assertEquals('success', $response['status']);
         $this->assertDatabaseHas('loans', ['user_id' => $this->_userOne->id, 'amount' => 40, 'loan_term' => 4]);
     }
 
@@ -128,11 +128,11 @@ class LoansTest extends TestCase
         $loan = $this->createLoan(['user_id' => $this->_userTwo->id]);
         $this->authUser($this->_adminUser);
         
-        $response = $this->patchJson(route('loan.approve', ['loan_id' => $loan->id]))
+        $response = $this->postJson(route('loan.approve', ['loan_id' => $loan->id]))
                     ->assertOk()
                     ->json();
 
-        $this->assertEquals('SUCCESS', $response['status']);
+        $this->assertEquals('success', $response['status']);
         $this->assertDatabaseHas('loans', ['user_id' => $loan->user_id, 'status' => 'approved']);
         $this->assertDatabaseCount('repayment_schedules', $loan->loan_term);
     }
@@ -142,11 +142,11 @@ class LoansTest extends TestCase
         $loan = $this->createLoan(['user_id' => $this->_userTwo->id]);
         $this->authUser($this->_userOne);
         
-        $response = $this->patchJson(route('loan.approve', ['loan_id' => $loan->id]))
+        $response = $this->postJson(route('loan.approve', ['loan_id' => $loan->id]))
                     ->assertUnauthorized()
                     ->json();
         
-        $this->assertEquals('FAIL', $response['status']);
+        $this->assertEquals('failed', $response['status']);
     }
 
 }

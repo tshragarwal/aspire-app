@@ -2,179 +2,166 @@
 
 namespace App\Services;
 
+use App\Events\LoanApplicationApproved;
+use App\Events\NewLoanApplication;
+use App\Events\RepaymentSuccessful;
 use Carbon\Carbon;
 use App\Models\Loan;
-use App\Http\Requests\LoanRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\RepaymentRequest;
 use Illuminate\Database\QueryException;
-use App\Http\Requests\LoanApproveRequest;
-use Illuminate\Http\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * class UserService
  */
 
- class LoanService extends BaseService
+ class LoanService
  {
-     # Messages
-     const APPLICATION_SUBMITTED_SUCCESSFULLY = 'Loan application submitted successfully.';
-     const LOAN_DETAILS_NOT_FOUND = 'Unable to get requested loan details.';
-     const LOAN_APPROVED = 'Loan has been approved.';
-     const INTERNAL_SERVER_ERROR = 'Facing some technical issue. Please contact site admin.';
-     const LOAN_AMOUNT_INSUFFICIENT = 'Repayment amount is insufficient.';
-
      /**
       * Fetch all logged-in user loan(s).
       * Fetch all loans if user is admin.
       * 
-      * @return \Illuminate\Http\Response
+      * @return Loan[]
       */
-     public function getAllLoans(): HttpResponse
+     public function getMyLoan()
      {
         $loans = Auth::user()->is_admin ? 
                 Loan::orderBy('id', 'desc')->get() :
                 auth()->user()->loans;
 
-        return $this->sendReponse($loans);
+        return $loans;
      }
 
      /**
       * Fetch loan details against loan id.
       *
-      * @param Int $id
-      * @param \Illuminate\Http\Response
+      * @param int $id
+      * @param Loan | null
       */
-     public function fetchLoan(int $id): HttpResponse
+     public function getLoanDetails(int $id): Loan | null
      {
         $loan = Auth::user()->is_admin ? 
         Loan::with('repaymentSchedules')->find($id) :
         Loan::with('repaymentSchedules')->where('id', $id)->whereUserId(Auth::user()->id)->first();
-
-        if(!$loan) {
-            return $this->sendReponse([], self::LOAN_DETAILS_NOT_FOUND, Response::HTTP_OK, 'FAIL');
-        }
-
-        return $this->sendReponse($loan);
+        
+        return $loan;
      }
      
 
      /**
       * Create loan request.
       *
-      * @param LoanRequest $request
-      * @return \Illuminate\Http\Response
+      * @param array
+      * @return Loan
       */
-     public function loanRequest(LoanRequest $request): HttpResponse
+     public function newLoanRequest(array $data): Loan
      {
-        $loan = auth()->user()
-                ->loans()
-                ->create($request->validated());
-        return $this->sendReponse($loan, self::APPLICATION_SUBMITTED_SUCCESSFULLY, Response::HTTP_CREATED);
+        try{
+            $loanDetails = Auth::user()->loans()->create($data);
+            event(new NewLoanApplication($loanDetails));
+            return $loanDetails;
+        } catch (QueryException $e) {
+            report($e);
+            throw new \Exception(INTERNAL_SERVER_ERROR);
+        }
      }
 
 
      /**
-      * Approve loan request.
+      * Approve loan.
       *
-      * @param LoanApproveRequest $request
-      * @return \Illuminate\Http\Response
+      * @param int $loanID
+      * @return Loan
       */
-     public function approveLoan(LoanApproveRequest $request): HttpResponse
+     public function approveLoan(int $loanID): Loan
      {
-        $loan = Loan::find($request->validated('loan_id'));
+        $loan = Loan::find($loanID);
 
         if(!$loan) {
-            return $this->sendReponse([], self::LOAN_DETAILS_NOT_FOUND, Response::HTTP_OK, 'FAIL');
+            throw new \Exception(LOAN_DETAILS_NOT_FOUND);
         }
 
-        if($loan->status === 'pending') {
-            try{
-                DB::beginTransaction();
-
-                $loan->status = 'approved';
-                $loan->approved_by = Auth::user()->id;
-                $loan->approved_at = Carbon::now();
-
-                $loan->save();
-
-                //Adding repayment schedule
-                $termAmount = $loan->amount / $loan->loan_term;
-
-                for($i = 1; $i <= $loan->loan_term; $i++) {
-                    $loan->repaymentSchedules()->create([
-                        'repayment_amount' => $termAmount,
-                        'scheduled_on' => Carbon::now()->addDays(7 * $i)
-                    ]);
-                }
-                DB::commit();
-
-                return $this->sendReponse([], self::LOAN_APPROVED);
-            } catch (QueryException $e) {
-                DB::rollBack();
-                return $this->sendReponse([], self::INTERNAL_SERVER_ERROR, Response::HTTP_INTERNAL_SERVER_ERROR, 'FAIL');
-            } 
+        if($loan->status !== 'pending') {
+            throw new \Exception(LOAN_STATUS_NOT_PENDING);
         }
 
-        return $this->sendReponse([], 'Loan approval failed because loan status is ' . strtoupper($loan->status));
+
+        try{
+            DB::beginTransaction();
+
+            $loan->status = 'approved';
+            $loan->approved_by = Auth::user()->id;
+            $loan->approved_at = Carbon::now();
+
+            $loan->save();
+
+            //Adding repayment schedule
+            $termAmount = $loan->amount / $loan->loan_term;
+
+            for($i = 1; $i <= $loan->loan_term; $i++) {
+                $loan->repaymentSchedules()->create([
+                    'repayment_amount' => $termAmount,
+                    'scheduled_on' => Carbon::now()->addDays(7 * $i)
+                ]);
+            }
+            DB::commit();
+
+            event(new LoanApplicationApproved($loan));
+            return $loan;
+        } catch (QueryException $e) {
+            DB::rollBack();
+            throw new \Exception(INTERNAL_SERVER_ERROR);
+        } 
     }
 
-    public function loanRepayment(RepaymentRequest $request): HttpResponse
+    /**
+     * Loan repayment
+     * 
+     * @param int $loanID
+     * @param float $amount
+     * 
+     * @return Loan
+     */
+    public function loanRepayment(int $loanID, float $amount): Loan
     {
-        $loan = Loan::where('id', $request->validated('loan_id'))
+        if($loanID < 1 || $amount < 1) {
+            throw new \Exception(INVALID_AMOUNT_LOANID, Response::HTTP_OK);
+        }
+
+        $loan = Loan::where('id', $loanID)
                 ->whereUserId(Auth::user()->id)->first();
 
         if(!$loan) {
-            return $this->sendReponse([], self::LOAN_DETAILS_NOT_FOUND, Response::HTTP_UNAUTHORIZED, 'FAIL');
+            throw new \Exception(LOAN_DETAILS_NOT_FOUND, Response::HTTP_NOT_FOUND);
         }
 
-        //validate repayment amount
-        if((float)$request->validated('amount') < ((float)$loan->amount / (int) $loan->loan_term)) {
-            return $this->sendReponse([], self::LOAN_AMOUNT_INSUFFICIENT, Response::HTTP_OK, 'FAIL');
+        if($loan->status === 'paid' || $loan->status === 'pending') {
+            throw new \Exception(LOAN_STATUS_PENDING_PAID, Response::HTTP_OK);
         }
 
-        if($loan->status === 'approved') {
-            try{
-                DB::beginTransaction();
-
-                $paidTerm = 0;
-            
-                $repaymentSchedules = $loan->repaymentSchedules;
-                foreach($repaymentSchedules as $repaymentSchedule) {
-                    if($repaymentSchedule->status === 'paid') {
-                        $paidTerm++;
-                        continue;
-                    }
-                    if($repaymentSchedule->status === 'pending') {
-                        $repaymentSchedule->paid_amount = $request->validated('amount');
-                        $repaymentSchedule->status = 'paid';
-                        $repaymentSchedule->save();
-                        $paidTerm++;
-                        break;
-                    }
+        // Amount check
+        if($amount < (float) ($loan->amount / $loan->loan_term)) {
+            throw new \Exception(LOAN_AMOUNT_INSUFFICIENT, Response::HTTP_OK);
+        }
+        
+        try{
+            $repaymentSchedules = $loan->repaymentSchedules;
+            foreach($repaymentSchedules as $repaymentSchedule) {
+                if($repaymentSchedule->status === 'pending') {
+                    $repaymentSchedule->paid_amount = $amount;
+                    $repaymentSchedule->status = 'paid';
+                    $repaymentSchedule->save();
+                    break;
                 }
-
-                $message = 'Loan re-payment is successful.';
-
-                if($paidTerm === (int)$loan->loan_term) {
-                    $loan->status = 'paid';
-                    $loan->save();
-
-                    $message .= ' You have paid your loan successfully.';
-                }
-                
-                DB::commit();
-
-                return $this->sendReponse([], $message);
-            } catch (QueryException $e) {
-                DB::rollBack();
-                return $this->sendReponse([], self::INTERNAL_SERVER_ERROR, Response::HTTP_INTERNAL_SERVER_ERROR, 'FAIL');
             }
-        }
 
-        return $this->sendReponse([], 'Repayment request failed because loan status is ' . strtoupper($loan->status), Response::HTTP_OK, 'FAIL');
+            event(new RepaymentSuccessful($loan));
+            return $loan;
+        } catch (QueryException $e) {
+            report($e);
+            throw new \Exception(INTERNAL_SERVER_ERROR, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
     
  }

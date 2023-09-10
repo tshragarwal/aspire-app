@@ -1,4 +1,4 @@
-FROM php:8.1-fpm-alpine
+FROM php:8.2-fpm-alpine
 
 WORKDIR /var/www/html
 
@@ -18,31 +18,31 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql
 RUN docker-php-ext-configure intl && docker-php-ext-install intl
 
 # Installing PHP
-RUN apk add --no-cache php8 \
-    php8-common \
-    php8-fpm \
-    php8-pdo \
-    php8-opcache \
-    php8-zip \
-    php8-phar \
-    php8-iconv \
-    php8-cli \
-    php8-curl \
-    php8-openssl \
-    php8-mbstring \
-    php8-tokenizer \
-    php8-fileinfo \
-    php8-json \
-    php8-xml \
-    php8-xmlwriter \
-    php8-simplexml \
-    php8-dom \
-    php8-pdo_mysql \
-    php8-pdo_sqlite \
-    php8-tokenizer \
-    php8-pecl-redis 
+RUN apk add --no-cache php82 \
+    php82-common \
+    php82-fpm \
+    php82-pdo \
+    php82-opcache \
+    php82-zip \
+    php82-phar \
+    php82-iconv \
+    php82-cli \
+    php82-curl \
+    php82-openssl \
+    php82-mbstring \
+    php82-tokenizer \
+    php82-fileinfo \
+    php82-json \
+    php82-xml \
+    php82-xmlwriter \
+    php82-simplexml \
+    php82-dom \
+    php82-pdo_mysql \
+    php82-pdo_sqlite \
+    php82-tokenizer \
+    php82-pecl-redis
 
-RUN ln -s /usr/bin/php8 /usr/bin/php
+RUN ln -s /usr/bin/php82 /usr/bin/php
 
 # Installing composer
 RUN curl -sS https://getcomposer.org/installer -o composer-setup.php

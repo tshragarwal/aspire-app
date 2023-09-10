@@ -15,7 +15,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson(route('user.login'), [
+        $response = $this->postJson(route('customer.login'), [
             'email' => $user->email,
             'password' => 'password'
         ])->assertOk()
@@ -26,19 +26,19 @@ class LoginTest extends TestCase
 
     public function test_user_email_not_found()
     {
-        $response = $this->postJson(route('user.login'), [
+        $response = $this->postJson(route('customer.login'), [
             'email' => 'example@gmail.com',
             'password' => 'secret@123'
-        ])->assertUnauthorized();
+        ])->assertNotFound();
     }
 
     public function test_a_user_try_login_with_wrong_password()
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson(route('user.login'), [
+        $response = $this->postJson(route('customer.login'), [
             'email' => $user->email,
             'password' => 'secret@123'
-        ])->assertUnauthorized();
+        ])->assertNotFound();
     }
 }

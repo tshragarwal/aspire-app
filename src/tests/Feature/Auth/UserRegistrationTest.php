@@ -11,7 +11,7 @@ class UserRegistrationTest extends TestCase
    
     public function test_a_user_can_register()
     {
-        $this->postJson(route('user.register'), [
+        $this->postJson(route('customer.register'), [
             'name' => 'Tushar',
             'email' => 'tshragarwal@gmail.com',
             'password' => 'secret@123',
@@ -25,7 +25,7 @@ class UserRegistrationTest extends TestCase
     {
         $this->withExceptionHandling();
 
-        $response = $this->postJson(route('user.register'), [
+        $response = $this->postJson(route('customer.register'), [
             'name' => 'Tushar',
             'password' => 'secret@123',
             'password_confirmation' => 'secret@123'
